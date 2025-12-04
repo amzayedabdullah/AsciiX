@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -21,29 +22,40 @@ class _AsciiOutputScreenState extends State<AsciiOutputScreen> {
   Future<void> saveAndShare() async {
     try {
       setState(() => saving = true);
+
+      // Request permission for Android 10 and below
       await Permission.storage.request();
 
-      RenderRepaintBoundary boundary =
+      final boundary =
           _globalKey.currentContext!.findRenderObject()
               as RenderRepaintBoundary;
+
       ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+
       ByteData? byteData = await image.toByteData(
         format: ui.ImageByteFormat.png,
       );
-      Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      if (byteData == null) {
+        throw Exception("Image capture failed.");
+      }
+
+      Uint8List pngBytes = byteData.buffer.asUint8List();
 
       final dir = await getTemporaryDirectory();
       final file = File(
         "${dir.path}/ascii_${DateTime.now().millisecondsSinceEpoch}.png",
       );
+
       await file.writeAsBytes(pngBytes);
 
       setState(() => saving = false);
+
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Saved & ready to share!")));
+      ).showSnackBar(const SnackBar(content: Text("Saved & ready to share!")));
 
-      await Share.shareFiles([file.path], text: "Check my ASCII art!");
+      await Share.shareXFiles([XFile(file.path)], text: "Check my ASCII art!");
     } catch (e) {
       setState(() => saving = false);
       ScaffoldMessenger.of(
