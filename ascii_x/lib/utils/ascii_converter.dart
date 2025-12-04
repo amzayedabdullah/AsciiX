@@ -1,6 +1,5 @@
 import 'dart:ui' as ui;
 import 'dart:io';
-import 'dart:typed_data';
 
 class AsciiConverter {
   static const String asciiChars = "@%#*+=-:. ";

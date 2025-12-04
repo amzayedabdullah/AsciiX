@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
-import 'theme/dark_theme.dart';
-import 'theme/light_theme.dart';
+import 'utils/themes.dart';
 
 void main() {
-  runApp(const AsciiXApp());
+  runApp(const MyApp());
 }
 
-class AsciiXApp extends StatelessWidget {
-  const AsciiXApp({super.key});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
 
+class _MyAppState extends State<MyApp> {
+  bool isDark = false;
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'AsciiX',
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      themeMode: ThemeMode.system,
-      home: const HomeScreen(),
+      theme: isDark ? AppThemes.darkTheme : AppThemes.lightTheme,
+      home: HomeScreen(
+        onThemeToggle: () => setState(() => isDark = !isDark),
+        isDark: isDark,
+      ),
     );
   }
 }

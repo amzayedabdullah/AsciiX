@@ -1,76 +1,58 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import '../utils/ascii_converter.dart';
-import 'ascii_output_screen.dart';
+import '../services/ascii_service.dart';
+import '../widgets/theme_switcher.dart';
+import '../widgets/image_picker_button.dart';
+import 'preview_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final VoidCallback onThemeToggle;
+  final bool isDark;
+  const HomeScreen({super.key, required this.onThemeToggle, required this.isDark});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  File? imageFile;
-  bool loading = false;
-
-  Future<void> pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() => imageFile = File(picked.path));
-    }
-  }
-
-  Future<void> generateAscii() async {
-    if (imageFile == null) return;
-    setState(() => loading = true);
-
-    final ascii = await AsciiConverter.convertImageToAscii(
-      imageFile!,
-      width: 100,
-    );
-
-    setState(() => loading = false);
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => AsciiOutputScreen(asciiText: ascii)),
-    );
-  }
+  String asciiOutput = '';
+  Uint8List? selectedImage;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("AsciiX")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            imageFile == null
-                ? Container(
-                    height: 200,
-                    width: double.infinity,
-                    color: Colors.grey[800],
-                    alignment: Alignment.center,
-                    child: const Text("No Image Selected"),
-                  )
-                : Image.file(imageFile!, height: 200),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: pickImage,
-              child: const Text("Pick Image"),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: loading ? null : generateAscii,
-              child: loading
-                  ? const CircularProgressIndicator()
-                  : const Text("Convert to ASCII"),
-            ),
-          ],
-        ),
+      appBar: AppBar(
+        title: const Text("ASCII Converter"),
+        actions: [ThemeSwitcher(isDark: widget.isDark, onToggle: widget.onThemeToggle)],
       ),
+      body: Column(
+        children: [
+          ImagePickerButton(onImageSelected: (img) async {
+            selectedImage = img;
+            asciiOutput = await AsciiService.imageToAscii(img, widget.isDark);
+            setState(() {});
+          }),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(12),
+              child: Text(asciiOutput, style: const TextStyle(fontFamily: 'monospace')),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: selectedImage == null
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PreviewScreen(asciiText: asciiOutput, isDark: widget.isDark),
+                  ),
+                );
+              },
+              label: const Text("Export"),
+              icon: const Icon(Icons.download_rounded),
+            ),
     );
   }
 }
